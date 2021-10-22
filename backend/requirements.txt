@@ -1,0 +1,4 @@
+pyzmq==22.2.1
+uvicorn==0.15.0
+zmq==0.0.0
+fastapi==0.68.1

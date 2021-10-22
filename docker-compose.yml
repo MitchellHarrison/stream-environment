@@ -1,0 +1,16 @@
+version: "3.9"
+services:
+    twitch_chat_reader:
+        container_name: twitch_reader
+        build: 
+            context: ./twitch-chat-reader
+            network: stream_net
+        env_file: ./twitch-chat-reader/credentials.env
+        ports: 
+            - "6667:6667"
+    
+    chat_input_handler:
+        container_name: chat_input_handler
+        build: 
+            context: ./chat-input-handler
+            network: stream_net
