@@ -4,13 +4,33 @@ services:
         container_name: twitch_reader
         build: 
             context: ./twitch-chat-reader
-            network: stream_net
+        networks: 
+            - stream-net
         env_file: ./twitch-chat-reader/credentials.env
         ports: 
             - "6667:6667"
+        depends_on:
+            - broker
     
     chat_input_handler:
         container_name: chat_input_handler
         build: 
             context: ./chat-input-handler
-            network: stream_net
+        networks: 
+            - stream-net
+        depends_on:
+            - broker
+
+    broker:
+        container_name: broker
+        image: zeromq/zeromq
+        networks:
+            - stream-net
+        ports:
+            - "5555:5555"
+        tty: true
+
+networks:
+    stream-net:
+        driver: bridge
+        name: stream-net

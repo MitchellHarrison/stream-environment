@@ -27,7 +27,7 @@ PORT = 6667
 
 # zmq-specific things
 ZMQ_PORT = 5555
-ZMQ_HOST = "127.0.0.1"
+ZMQ_HOST = "*"
 ZMQ_ADDRESS = f"tcp://{ZMQ_HOST}:{ZMQ_PORT}"
 TOPIC = "twitch_messages"
 
@@ -59,6 +59,7 @@ class Listener:
         
 
     async def publish_to_zmq(self, payload:str) -> None:
+        print("Listener found a message")
         message = [self.topic.encode("ascii"), payload.encode("ascii")]
         await self.pub.send_multipart(message)
 
@@ -83,7 +84,7 @@ class Listener:
     async def read(self) -> None:
         self.context = zmq.asyncio.Context()
         self.pub = self.context.socket(zmq.PUB)
-        self.pub.connect(self.zmq_address)
+        self.pub.bind(self.zmq_address)
 
         while True:
             data = await self.reader.read(1024)

@@ -27,7 +27,7 @@ class ChatHandler:
         self.zmq_address = zmq_address
 
         self.twitch_sock = self.context.socket(zmq.SUB)
-        self.twitch_sock.bind(self.zmq_address)
+        self.twitch_sock.connect(self.zmq_address)
         self.twitch_sock.setsockopt(zmq.SUBSCRIBE, bytes(self.twitch, "ascii"))
 
         self.twitch_pattern = re.compile(
@@ -117,6 +117,7 @@ class ChatHandler:
         while True:
             _, msg = await self.twitch_sock.recv_multipart()
             payload = json.loads(msg)
+            print(payload)
             payload_data = payload.get("data", "")
             platform = payload_data.get("platform", "")
             sent_time = payload.get("time", str(datetime.now()))
@@ -131,4 +132,4 @@ class ChatHandler:
 
             output = self.format_output(payload, message_data)
             output_url = "http://127.0.0.1:8000/chat/v1.0/"
-            await self.aio_post(output_url, output)
+            #await self.aio_post(output_url, output)
