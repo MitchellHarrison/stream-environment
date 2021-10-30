@@ -14,7 +14,7 @@ CONTEXT = zmq.asyncio.Context()
 
 API = "http://127.0.0.1:1337"
 
-ZMQ_HOST = "127.0.0.1"
+ZMQ_HOST = "twitchreader"
 ZMQ_PORT = 5555
 ZMQ_PROTOCOL = "tcp"
 ZMQ_ADDRESS = f"{ZMQ_PROTOCOL}://{ZMQ_HOST}:{ZMQ_PORT}"
@@ -117,7 +117,7 @@ class ChatHandler:
         while True:
             _, msg = await self.twitch_sock.recv_multipart()
             payload = json.loads(msg)
-            print(payload)
+            print("Payload:", payload)
             payload_data = payload.get("data", "")
             platform = payload_data.get("platform", "")
             sent_time = payload.get("time", str(datetime.now()))
