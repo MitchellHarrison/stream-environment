@@ -27,7 +27,7 @@ PORT = 6667
 
 # zmq-specific things
 ZMQ_PORT = 5555
-ZMQ_HOST = "*"
+ZMQ_HOST = "0.0.0.0"
 ZMQ_ADDRESS = f"tcp://{ZMQ_HOST}:{ZMQ_PORT}"
 TOPIC = "twitch_messages"
 
@@ -59,8 +59,8 @@ class Listener:
         
 
     async def publish_to_zmq(self, payload:str) -> None:
-        print("Listener found a message")
         message = [self.topic.encode("ascii"), payload.encode("ascii")]
+        print("Sending Message: ", message)
         await self.pub.send_multipart(message)
 
 
@@ -78,7 +78,7 @@ class Listener:
         await self.send(f"NICK {self.bot_name}")
         await self.send(f"JOIN #{self.channel}")        
         await self.send(f"CAP REQ :twitch.tv/tags")
-        await self.send(f"PRIVMSG #{self.channel} :I'm listening!")
+        # await self.send(f"PRIVMSG #{self.channel} :I'm listening!")
 
 
     async def read(self) -> None:
@@ -88,7 +88,12 @@ class Listener:
 
         while True:
             data = await self.reader.read(1024)
-            messages = data.decode()
+            try:
+                messages = data.decode()
+            except UnicodeDecodeError:
+                raise(UnicodeDecodeError(data))
+            if len(messages) == 0:
+                continue
 
             if messages.startswith("PING"):
                 await self.pong()
