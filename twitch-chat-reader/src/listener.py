@@ -78,7 +78,7 @@ class Listener:
         await self.send(f"NICK {self.bot_name}")
         await self.send(f"JOIN #{self.channel}")        
         await self.send(f"CAP REQ :twitch.tv/tags")
-        # await self.send(f"PRIVMSG #{self.channel} :I'm listening!")
+        await self.send(f"PRIVMSG #{self.channel} :I'm listening!")
 
 
     async def read(self) -> None:
