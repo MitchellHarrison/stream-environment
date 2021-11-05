@@ -1,6 +1,7 @@
 import asyncio
 import aiohttp
 import re
+import os
 import uuid
 import zmq
 import zmq.asyncio
@@ -12,22 +13,23 @@ TWITCH = "twitch_messages"
 YOUTUBE = "youtube_messages"
 CONTEXT = zmq.asyncio.Context()
 
-API = "http://127.0.0.1:1337"
+BACKEND_NAME = os.environ.get("BACKEND_NAME", "127.0.0.1")
+BACKEND = f"http://{BACKEND_NAME}:1337"
 
-ZMQ_HOST = "twitchreader"
+TWITCH_READER = os.environ.get("TWITCH_READER", "127.0.0.1")
 ZMQ_PORT = 5555
 ZMQ_PROTOCOL = "tcp"
-ZMQ_ADDRESS = f"{ZMQ_PROTOCOL}://{ZMQ_HOST}:{ZMQ_PORT}"
+TWITCH_ADDRESS = f"{ZMQ_PROTOCOL}://{TWITCH_READER}:{ZMQ_PORT}"
 
 class ChatHandler:
     def __init__(self, twitch:str = TWITCH, context:zmq.asyncio.Context = CONTEXT,
-                zmq_address:str = ZMQ_ADDRESS):
+                twitch_address:str = TWITCH_ADDRESS):
         self.twitch = twitch
         self.context = context
-        self.zmq_address = zmq_address
+        self.twitch_address = twitch_address
 
         self.twitch_sock = self.context.socket(zmq.SUB)
-        self.twitch_sock.connect(self.zmq_address)
+        self.twitch_sock.connect(self.twitch_address)
         self.twitch_sock.setsockopt(zmq.SUBSCRIBE, bytes(self.twitch, "ascii"))
 
         self.twitch_pattern = re.compile(
@@ -72,7 +74,7 @@ class ChatHandler:
                     "name": name, 
                     "output": message.text.split(" ", 2)[-1]
                 }
-                entry_url = f"{API}/commands/add/twitch/"
+                entry_url = f"{BACKEND}/commands/add/twitch/"
                 await self.aio_post(entry_url, entry)
 
             if message.command == "!delcommand" and message.sender.is_broadcaster:
@@ -80,7 +82,7 @@ class ChatHandler:
                 name = first_word if first_word.startswith("!") else f"!{first_word}"
                 
                 payload = {"name": name}
-                await self.aio_post(f"{API}/commands/delete/twitch/", payload)
+                await self.aio_post(f"{BACKEND}/commands/delete/twitch/", payload)
 
             response = await self.get_command_response(command, "twitch")
 
@@ -98,13 +100,13 @@ class ChatHandler:
 
 
     async def get_command_response(self, command:str, platform:str) -> str:
-        # get list of commands from db API
-        url = f"{API}/commands/get-all/{platform}/" 
+        # get list of commands from db BACKEND
+        url = f"{BACKEND}/commands/get-all/{platform}/" 
         commands = await self.aio_get(url)
 
         default_reply = "That's not a command, sorry!"
         if command in commands:
-            output_url = f"{API}/commands/output/{platform}/{command}/"
+            output_url = f"{BACKEND}/commands/output/{platform}/{command}/"
             response = await self.aio_get(output_url)
             reply = response.get("output", default_reply)
         else:
