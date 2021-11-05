@@ -1,3 +1,4 @@
+import os
 import uuid
 import uvicorn
 import json
@@ -5,7 +6,10 @@ from datetime import datetime
 from fastapi import FastAPI, Request
 from publisher import Publisher
 
-DATABASE = "http://127.0.0.1:1337/"
+DB_API_NAME = os.environ.get("DB_API_NAME", "127.0.0.1")
+DB_API_PORT = os.environ.get("DB_API_PORT", 1337)
+DATABASE = f"http://{DB_API_NAME}:{DB_API_PORT}/"
+
 ZMQ_PUB = "chat_output"
 app = FastAPI()
 publisher = Publisher()
@@ -30,6 +34,7 @@ def format_message_response(message:dict, platform:str, chat_response:str) -> di
 async def handle_message(payload:Request):
     message = await payload.json()
     data = message["data"]
+    print(data)
     platform = data["platform"]
 
     if data["is_command"]:
@@ -46,5 +51,5 @@ async def handle_message(payload:Request):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=1337)
 

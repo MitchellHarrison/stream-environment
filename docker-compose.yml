@@ -12,29 +12,43 @@ services:
         ports: 
             - "6667:6667"
         depends_on:
-            - broker
+            - backend
     
     chat_input_handler:
         container_name: chat_input_handler
         build: 
             context: ./chat-input-handler
+        environment:
+            - TWITCH_READER=twitchreader
+            - BACKEND_NAME=backend
         networks: 
             stream-net:
                 aliases:
                     - chathandler
         depends_on:
-            - broker
+            - twitch_chat_reader
+            - backend
 
-    broker:
-        container_name: broker
-        image: zeromq/zeromq
+    backend:
+        container_name: backend
+        build:
+            context: ./backend
+        environment:
+            - DB_API_NAME=db_api
+            - DB_API_PORT=1337
         networks:
             stream-net:
                 aliases:
-                    - broker
-        ports:
-            - "5555:5555"
-        tty: true
+                    - backend
+
+    db_api:
+        container_name: db_api
+        build:
+            context: ./db-api
+        networks:
+            stream-net:
+                aliases:
+                    - db_api
 
 networks:
     stream-net:
