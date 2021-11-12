@@ -13,8 +13,8 @@ TWITCH = "twitch_messages"
 YOUTUBE = "youtube_messages"
 CONTEXT = zmq.asyncio.Context()
 
-BACKEND_NAME = os.environ.get("BACKEND_NAME", "127.0.0.1")
-BACKEND = f"http://{BACKEND_NAME}:1337"
+DB_API = os.environ.get("DB_API", "127.0.0.1")
+DATABASE = f"http://{DB_API}:1337"
 
 TWITCH_READER = os.environ.get("TWITCH_READER", "127.0.0.1")
 ZMQ_PORT = 5555
@@ -74,15 +74,15 @@ class ChatHandler:
                     "name": name, 
                     "output": message.text.split(" ", 2)[-1]
                 }
-                entry_url = f"{BACKEND}/commands/add/twitch/"
+                entry_url = f"{DATABASE}/commands/add/twitch/"
                 await self.aio_post(entry_url, entry)
 
-            if message.command == "!delcommand" and message.sender.is_broadcaster:
+            elif message.command == "!delcommand" and message.sender.is_broadcaster:
                 first_word = message.text.split()[1]
                 name = first_word if first_word.startswith("!") else f"!{first_word}"
                 
                 payload = {"name": name}
-                await self.aio_post(f"{BACKEND}/commands/delete/twitch/", payload)
+                await self.aio_post(f"{DATABASE}/commands/delete/twitch/", payload)
 
             response = await self.get_command_response(command, "twitch")
 
@@ -100,13 +100,13 @@ class ChatHandler:
 
 
     async def get_command_response(self, command:str, platform:str) -> str:
-        # get list of commands from db BACKEND
-        url = f"{BACKEND}/commands/get-all/{platform}/" 
+        # get list of commands from db DATABASE
+        url = f"{DATABASE}/commands/get-all/{platform}/" 
         commands = await self.aio_get(url)
 
         default_reply = "That's not a command, sorry!"
         if command in commands:
-            output_url = f"{BACKEND}/commands/output/{platform}/{command}/"
+            output_url = f"{DATABASE}/commands/output/{platform}/{command}/"
             response = await self.aio_get(output_url)
             reply = response.get("output", default_reply)
         else:

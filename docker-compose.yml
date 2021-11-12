@@ -20,11 +20,14 @@ services:
             context: ./chat-input-handler
         environment:
             - TWITCH_READER=twitchreader
-            - BACKEND_NAME=backend
+            - DB_API=db_api
         networks: 
             stream-net:
                 aliases:
                     - chathandler
+        restart: on-failure
+        ports:
+            - "443"
         depends_on:
             - twitch_chat_reader
             - backend
@@ -36,19 +39,50 @@ services:
         environment:
             - DB_API_NAME=db_api
             - DB_API_PORT=1337
+        restart: on-failure
         networks:
             stream-net:
                 aliases:
                     - backend
+        depends_on:
+            - db_api
 
     db_api:
         container_name: db_api
         build:
             context: ./db-api
+        environment:
+            - DB_USER=postgres
+            - DB_PASS=password
+            - DB_NAME=livestream
+        restart: on-failure
+        ports:
+            - "1337:1337"
         networks:
             stream-net:
                 aliases:
                     - db_api
+        depends_on:
+            - db
+
+    db:
+        container_name: database
+        image: postgres
+        environment:
+            - POSTGRES_USER=postgres 
+            - POSTGRES_PASSWORD=password
+            - POSTGRES_DB=livestream
+        ports:
+            - "5432:5432"
+        networks:
+            stream-net:
+                aliases:
+                    - database
+        volumes:
+            - postgres_data:/var/lib/postgresql/13/main
+
+volumes:
+    postgres_data:
 
 networks:
     stream-net:
