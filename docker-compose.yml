@@ -22,6 +22,8 @@ services:
         environment:
             - TWITCH_READER=twitchreader
             - DB_API=db_api
+            - BACKEND_NAME=backend
+            - BACKEND_PORT=1336
         networks: 
             stream-net:
                 aliases:
