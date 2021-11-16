@@ -10,7 +10,7 @@ class TwitchMessage:
         self.sent_time = sent_time
         self.message = message
         self.twitch_pattern = re.compile(
-            fr"badges=(?P<badges>[^;]*).*display-name=(?P<display_name>[^;]*).*emotes=(?P<emotes>[^;]*);.+user-id=(?P<user_id>[\d]+).+:(?P<username>[\d\w]+)![^:]+:(?P<text>.*)\r",
+            fr"badges=(?P<badges>[^;]*).*display-name=(?P<display_name>[^;]*).*emotes=(?P<emotes>[^;]*);.+user-id=(?P<user_id>[\d]+).+:[^:]+:(?P<text>.*)",
             flags=re.IGNORECASE
         )
 
@@ -35,9 +35,10 @@ class TwitchMessage:
             message_data = self.twitch_pattern.search(message).groupdict() 
         except AttributeError:
             pass
+
         output = {
             "user_id": message_data.get("user_id", ""),
-            "username": message_data.get("username", ""),
+            "display_name": message_data.get("display_name", ""),
             "message": message_data.get("text", ""),
             "badges": message_data.get("badges", "")
         }
