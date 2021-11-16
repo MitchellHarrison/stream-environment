@@ -12,6 +12,7 @@ services:
         ports: 
             - "6667:6667"
         depends_on:
+            - chat_input_handler
             - backend
     
     chat_input_handler:
@@ -29,7 +30,6 @@ services:
         ports:
             - "443"
         depends_on:
-            - twitch_chat_reader
             - backend
 
     backend:
@@ -39,6 +39,8 @@ services:
         environment:
             - DB_API_NAME=db_api
             - DB_API_PORT=1337
+        ports:
+            - "1336:1336"            
         restart: on-failure
         networks:
             stream-net:
