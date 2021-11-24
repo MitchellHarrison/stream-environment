@@ -1,9 +1,9 @@
 import asyncio
-from listener import Listener
+from bot import Bot
 
 async def main():
-    listener = Listener()
-    await listener.run()
+    bot = Bot()
+    await bot.run()
 
 
 if __name__ == "__main__":

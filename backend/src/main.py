@@ -39,7 +39,6 @@ async def handle_message(payload:Request):
     if data["is_command"]:
         default_response = f"I don't know what to say, {data['display_name']}."
         response = data.get("response", default_response)
-
         output = format_message_response(message, platform, response)
         print(output)
         await publisher.publish(output)
@@ -52,4 +51,3 @@ async def handle_message(payload:Request):
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=1336)
-

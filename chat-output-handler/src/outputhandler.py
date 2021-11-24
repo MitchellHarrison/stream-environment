@@ -5,8 +5,8 @@ import json
 import zmq
 from zmq.asyncio import Context
 
-BACKEND = "0.0.0.0" #os.environ.get("BACKEND", "127.0.0.1")
-TWITCH_QUEUE = "0.0.0.0"
+BACKEND = os.environ.get("BACKEND", "127.0.0.1")
+TWITCH_QUEUE = os.environ.get("TWITCH_QUEUE", "")
 CONTEXT = Context()
 
 PORT = 5555
@@ -14,26 +14,25 @@ PROTOCOL = "tcp"
 
 # zmq SUB socket address
 CHAT_SUB_ADDRESS = f"{PROTOCOL}://{BACKEND}:{PORT}"
+CHAT_SUB_TOPIC = "chat_output"
 
 # zmq PUB socket address
-TWITCH_ADDRESS = f"{PROTOCOL}://{TWITCH_QUEUE}:{PORT}"
+TWITCH_ADDRESS = f"{PROTOCOL}://0.0.0.0:{PORT}"
 
 class OutputHandler:
     def __init__(self, context:Context=CONTEXT, chat_address:str=CHAT_SUB_ADDRESS,
-                twitch_address:str=TWITCH_ADDRESS, backend:str=BACKEND, 
+                twitch_address:str=TWITCH_ADDRESS, chat_sub_topic:str=CHAT_SUB_TOPIC,
                 twitch_queue:str=TWITCH_QUEUE):
         self.context = context
         self.chat_address = chat_address
         self.twitch_address = twitch_address
-
-        self.backend = backend
+        self.chat_sub_topic = chat_sub_topic
         self.twitch_queue = twitch_queue
 
         # zmq SUB socket
         self.sub_socket = self.context.socket(zmq.SUB)
-        print(self.chat_address)
-        self.sub_socket.bind(self.chat_address)
-        self.sub_socket.setsockopt(zmq.SUBSCRIBE, bytes(self.backend, "ascii"))
+        self.sub_socket.connect(self.chat_address)
+        self.sub_socket.setsockopt(zmq.SUBSCRIBE, bytes(self.chat_sub_topic, "ascii"))
 
         # zmq PUB socket
         self.twitch_socket = self.context.socket(zmq.PUB)
