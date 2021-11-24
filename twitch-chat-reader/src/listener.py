@@ -25,11 +25,12 @@ except KeyError:
 SERVER = "irc.twitch.tv"
 PORT = 6667
 
-# zmq-specific things
+# zmq PUB parameters
 ZMQ_PORT = 5555
 ZMQ_HOST = "0.0.0.0"
 ZMQ_ADDRESS = f"tcp://{ZMQ_HOST}:{ZMQ_PORT}"
 TOPIC = "twitch_messages"
+
 
 @dataclass
 class Listener:

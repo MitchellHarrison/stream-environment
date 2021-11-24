@@ -11,11 +11,13 @@ from message import TwitchMessage
 
 TWITCH = "twitch_messages"
 YOUTUBE = "youtube_messages"
+BACKEND = os.environ.get("BACKEND", "127.0.0.1")
 CONTEXT = zmq.asyncio.Context()
 
 DB_API = os.environ.get("DB_API", "127.0.0.1")
 DATABASE = f"http://{DB_API}:1337"
 
+# zmq SUB socket parameters
 BACKEND_NAME = os.environ.get("BACKEND_NAME", "127.0.0.1")
 BACKEND_PORT = os.environ.get("BACKEND_PORT", "1336")
 BACKEND = f"http://{BACKEND_NAME}:{BACKEND_PORT}"
@@ -32,7 +34,9 @@ class ChatHandler:
         self.context = context
         self.twitch_address = twitch_address
 
+        # zmq SUB socket
         self.twitch_sock = self.context.socket(zmq.SUB)
+        print(self.twitch_address)
         self.twitch_sock.connect(self.twitch_address)
         self.twitch_sock.setsockopt(zmq.SUBSCRIBE, bytes(self.twitch, "ascii"))
 
@@ -66,8 +70,7 @@ class ChatHandler:
     async def aio_post(self, url:str, payload:dict) -> None:
         data = json.dumps(payload).encode("ascii")
         async with aiohttp.ClientSession() as session:
-            async with session.post(url, data=data) as r:
-                response = await r.json()
+            async with session.post(url, data=data): 
                 return
 
 
@@ -140,5 +143,5 @@ class ChatHandler:
                 continue
 
             output = self.format_output(payload, message_data)
-            output_url = f"{BACKEND}/chat/v1.0/"
+            output_url = f"http://{BACKEND}:1336/chat/v1.0/"
             await self.aio_post(output_url, output)

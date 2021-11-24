@@ -7,30 +7,43 @@ services:
         networks: 
             stream-net:
                 aliases:
-                    - twitchreader
+                    - twitch_reader
         env_file: ./twitch-chat-reader/credentials.env
         ports: 
             - "6667:6667"
         depends_on:
             - chat_input_handler
-            - backend
     
     chat_input_handler:
         container_name: chat_input_handler
         build: 
             context: ./chat-input-handler
         environment:
-            - TWITCH_READER=twitchreader
+            - TWITCH_READER=twitch_reader
             - DB_API=db_api
-            - BACKEND_NAME=backend
-            - BACKEND_PORT=1336
+            - BACKEND=backend
         networks: 
             stream-net:
                 aliases:
-                    - chathandler
+                    - chat_input_handler
         restart: on-failure
         ports:
             - "443"
+        depends_on:
+            - backend
+
+    chat_output_handler:
+        container_name: chat_output_handler
+        build:
+            context: ./chat-output-handler
+        environment:
+            - BACKEND=backend
+            - TWITCH_QUEUE=twitch_output
+        networks:
+            stream-net:
+                aliases:
+                    - chat_output_handler
+        restart: on-failure
         depends_on:
             - backend
 
@@ -41,6 +54,7 @@ services:
         environment:
             - DB_API_NAME=db_api
             - DB_API_PORT=1337
+            - CHAT_OUTPUT=chat_output
         ports:
             - "1336:1336"            
         restart: on-failure

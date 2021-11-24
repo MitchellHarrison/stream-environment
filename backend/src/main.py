@@ -34,7 +34,6 @@ def format_message_response(message:dict, platform:str, chat_response:str) -> di
 async def handle_message(payload:Request):
     message = await payload.json()
     data = message["data"]
-    print(data)
     platform = data["platform"]
 
     if data["is_command"]:
