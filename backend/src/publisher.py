@@ -20,5 +20,4 @@ class Publisher:
 
     async def publish(self, payload:str) -> None:
         message = [self.topic.encode("ascii"), payload.encode("ascii")]
-        print("PUBLISHING" + payload)
         await self.socket.send_multipart(message)
