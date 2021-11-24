@@ -41,6 +41,7 @@ async def handle_message(payload:Request):
         response = data.get("response", default_response)
 
         output = format_message_response(message, platform, response)
+        print(output)
         await publisher.publish(output)
 
     return {

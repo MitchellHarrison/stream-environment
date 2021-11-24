@@ -18,6 +18,10 @@ DB_API = os.environ.get("DB_API", "127.0.0.1")
 DATABASE = f"http://{DB_API}:1337"
 
 # zmq SUB socket parameters
+BACKEND_NAME = os.environ.get("BACKEND_NAME", "127.0.0.1")
+BACKEND_PORT = os.environ.get("BACKEND_PORT", "1336")
+BACKEND = f"http://{BACKEND_NAME}:{BACKEND_PORT}"
+
 TWITCH_READER = os.environ.get("TWITCH_READER", "127.0.0.1")
 ZMQ_PORT = 5555
 ZMQ_PROTOCOL = "tcp"
@@ -54,6 +58,7 @@ class ChatHandler:
         return output
 
 
+    # wrapper around aiohttp get logic
     async def aio_get(self, url:str) -> dict:
         async with aiohttp.ClientSession() as session:
             async with session.get(url) as r:
@@ -61,6 +66,7 @@ class ChatHandler:
                 return response
 
 
+    # wrapper around aiohttp post logic
     async def aio_post(self, url:str, payload:dict) -> None:
         data = json.dumps(payload).encode("ascii")
         async with aiohttp.ClientSession() as session:
@@ -124,7 +130,6 @@ class ChatHandler:
         while True:
             _, msg = await self.twitch_sock.recv_multipart()
             payload = json.loads(msg)
-            print("Payload:", payload)
             payload_data = payload.get("data", "")
             platform = payload_data.get("platform", "")
             sent_time = payload.get("time", str(datetime.now()))
