@@ -20,6 +20,7 @@ BACKEND_NAME = os.environ.get("BACKEND_NAME", "127.0.0.1")
 BACKEND_PORT = os.environ.get("BACKEND_PORT", "1336")
 BACKEND = f"http://{BACKEND_NAME}:{BACKEND_PORT}"
 
+# zmq sub parameters
 TWITCH_BOT = os.environ.get("TWITCH_BOT", "127.0.0.1")
 PROTOCOL = "tcp"
 ZMQ_PORT = 5555
@@ -34,6 +35,7 @@ class ChatHandler:
 
         # zmq SUB socket
         self.twitch_sock = self.context.socket(zmq.SUB)
+        # tcp://twitch_chatbot:5555
         self.twitch_sock.connect(self.twitch_address)
         self.twitch_sock.setsockopt(zmq.SUBSCRIBE, bytes(self.twitch, "ascii"))
 
@@ -124,7 +126,6 @@ class ChatHandler:
 
 
     async def run(self) -> None:
-        print("THE INPUT HANDLER IS RUNNING")
         while True:
             _, msg = await self.twitch_sock.recv_multipart()
             payload = json.loads(msg)

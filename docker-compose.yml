@@ -8,8 +8,8 @@ services:
             stream-net:
                 aliases:
                     - twitch_chatbot
-        environment:
-            - OUTPUT_HANDLER=chat_output_handler
+                      #         environment:
+                      #             - OUTPUT_HANDLER=chat_output_handler
         env_file: ./twitch-chatbot/credentials.env
         ports: 
             - "6667:6667"

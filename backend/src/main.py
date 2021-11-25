@@ -40,7 +40,6 @@ async def handle_message(payload:Request):
         default_response = f"I don't know what to say, {data['display_name']}."
         response = data.get("response", default_response)
         output = format_message_response(message, platform, response)
-        print(output)
         await publisher.publish(output)
 
     return {

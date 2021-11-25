@@ -13,14 +13,14 @@ PORT = 5555
 PROTOCOL = "tcp"
 
 # zmq SUB socket address
-CHAT_SUB_ADDRESS = f"{PROTOCOL}://{BACKEND}:{PORT}"
+CHAT_ADDRESS = f"{PROTOCOL}://{BACKEND}:{PORT}"
 CHAT_SUB_TOPIC = "chat_output"
 
 # zmq PUB socket address
 TWITCH_ADDRESS = f"{PROTOCOL}://0.0.0.0:{PORT}"
 
 class OutputHandler:
-    def __init__(self, context:Context=CONTEXT, chat_address:str=CHAT_SUB_ADDRESS,
+    def __init__(self, context:Context=CONTEXT, chat_address:str=CHAT_ADDRESS,
                 twitch_address:str=TWITCH_ADDRESS, chat_sub_topic:str=CHAT_SUB_TOPIC,
                 twitch_queue:str=TWITCH_QUEUE):
         self.context = context
@@ -57,7 +57,7 @@ class OutputHandler:
     async def route(self, platform:str, payload:str) -> None:
         message = [self.twitch_queue.encode("ascii"), payload.encode("ascii")]
         if platform == "twitch":
-            print(payload)
+            print(f"OUTGOING {payload}")
             await self.twitch_socket.send_multipart(message)
         else:
             # this is where another streaming platform output would be
@@ -65,12 +65,10 @@ class OutputHandler:
         
 
     async def run(self) -> None:
-        print("RUNNING")
         while True:
             # receive message from chat output queue
             _, msg = await self.sub_socket.recv_multipart()
             payload = json.loads(msg)
-            print("MESSAGE RECEIVED")
 
             platform = payload["data"]["platform"]
             output = self.format_output(payload)

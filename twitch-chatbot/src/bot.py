@@ -85,6 +85,8 @@ class Bot:
 
 
     async def read(self) -> None:
+        self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
+        await self.connect()
         while True:
             data = await self.reader.read(1024)
             try:
@@ -108,26 +110,27 @@ class Bot:
 
 
     # read output messages from zmq
-    async def get_output(self) -> None:
-        _, msg = await self.sub.recv_multipart()
-        payload = json.loads(msg)
-        output_message = payload["data"]["message"]
-        await self.send_chat_message(output_message)
+    async def get_outgoing_messages(self) -> None:
+        # sub socket to receive chat output messages from zmq
+        self.sub = self.context.socket(zmq.SUB)
+        self.sub.connect(self.sub_address)
+        self.sub.subscribe("")
+
+        print("LISTENING FOR MESSAGES")
+        while True:
+            _, msg = await self.sub.recv_multipart()
+            payload = json.loads(msg)
+            print(f"CHATBOT OUTGOING MESSAGE RECEIVED {payload}")
+            output_message = payload["data"]["message"]
+            await self.send_chat_message(output_message)
 
 
-    async def run(self) -> None:
+    def run(self) -> None:
         self.context = zmq.asyncio.Context()
 
         # pub socket to publish incoming messages to zmq
         self.pub = self.context.socket(zmq.PUB)
         self.pub.bind(self.pub_address)
 
-        # sub socket to receive chat output messages from zmq
-        self.sub = self.context.socket(zmq.SUB)
-        self.sub.connect(self.sub_address)
-        self.sub.setsockopt(zmq.SUBSCRIBE, bytes(self.output_topic, "ascii"))
-
-        self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
-        await self.connect()
-        await self.read()
-        await self.get_output()
+        cors = asyncio.wait([self.read(), self.get_outgoing_messages()])
+        asyncio.get_event_loop().run_until_complete(cors)
