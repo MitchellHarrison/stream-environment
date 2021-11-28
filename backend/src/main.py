@@ -37,10 +37,13 @@ async def handle_message(payload:Request):
     platform = data["platform"]
 
     if data["is_command"]:
-        default_response = f"I don't know what to say, {data['display_name']}."
+        default_response = ""
         response = data.get("response", default_response)
-        output = format_message_response(message, platform, response)
-        await publisher.publish(output)
+
+        # invalid commands will have falsey response
+        if response:
+            output = format_message_response(message, platform, response)
+            await publisher.publish(output)
 
     return {
         "status": "SUCCESS",

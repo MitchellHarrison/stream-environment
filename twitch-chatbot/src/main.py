@@ -1,4 +1,3 @@
-import asyncio
 from bot import Bot
 
 def main():

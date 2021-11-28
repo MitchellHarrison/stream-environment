@@ -8,16 +8,14 @@ from zmq.asyncio import Context
 BACKEND = os.environ.get("BACKEND", "127.0.0.1")
 TWITCH_QUEUE = os.environ.get("TWITCH_QUEUE", "")
 CONTEXT = Context()
-
 PORT = 5555
-PROTOCOL = "tcp"
 
 # zmq SUB socket address
-CHAT_ADDRESS = f"{PROTOCOL}://{BACKEND}:{PORT}"
+CHAT_ADDRESS = f"tcp://{BACKEND}:{PORT}"
 CHAT_SUB_TOPIC = "chat_output"
 
 # zmq PUB socket address
-TWITCH_ADDRESS = f"{PROTOCOL}://0.0.0.0:{PORT}"
+TWITCH_ADDRESS = f"tcp://0.0.0.0:{PORT}"
 
 class OutputHandler:
     def __init__(self, context:Context=CONTEXT, chat_address:str=CHAT_ADDRESS,
@@ -36,7 +34,7 @@ class OutputHandler:
 
         # zmq PUB socket
         self.twitch_socket = self.context.socket(zmq.PUB)
-        self.twitch_socket.connect(self.twitch_address)
+        self.twitch_socket.bind(self.twitch_address)
 
 
     def format_output(self, payload:dict) -> str:
@@ -55,14 +53,19 @@ class OutputHandler:
         
 
     async def route(self, platform:str, payload:str) -> None:
+        print(f"topic = {self.twitch_queue}")
         message = [self.twitch_queue.encode("ascii"), payload.encode("ascii")]
-        if platform == "twitch":
-            print(f"OUTGOING {payload}")
-            await self.twitch_socket.send_multipart(message)
-        else:
-            # this is where another streaming platform output would be
-            pass
-        
+        try:
+            if platform == "twitch":
+                await self.twitch_socket.send_multipart(message)
+                print(f"OUTGOING {payload}")
+            else:
+                # this is where another streaming platform output would be
+                pass
+
+        except Exception as e:
+            print(e)
+
 
     async def run(self) -> None:
         while True:

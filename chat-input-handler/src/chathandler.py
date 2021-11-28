@@ -114,14 +114,13 @@ class ChatHandler:
         url = f"{DATABASE}/commands/get-all/{platform}/" 
         commands = await self.aio_get(url)
 
-        default_reply = "That's not a command, sorry!"
+        default_reply = ""
         if command in commands:
             output_url = f"{DATABASE}/commands/output/{platform}/{command}/"
             response = await self.aio_get(output_url)
             reply = response.get("output", default_reply)
         else:
             reply = default_reply
-
         return reply
 
 

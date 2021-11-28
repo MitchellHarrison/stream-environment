@@ -8,14 +8,14 @@ services:
             stream-net:
                 aliases:
                     - twitch_chatbot
-                      #         environment:
-                      #             - OUTPUT_HANDLER=chat_output_handler
+        environment:
+            - OUTPUT_HANDLER=chat_output_handler
         env_file: ./twitch-chatbot/credentials.env
         ports: 
             - "6667:6667"
         depends_on:
             - chat_input_handler
-    
+
     chat_input_handler:
         container_name: chat_input_handler
         build: 
