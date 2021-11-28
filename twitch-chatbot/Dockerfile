@@ -18,4 +18,4 @@ EXPOSE 6667/tcp
 COPY . .
 
 # run app
-CMD python3 src/main.py
+CMD ["python3", "-u", "src/main.py"]

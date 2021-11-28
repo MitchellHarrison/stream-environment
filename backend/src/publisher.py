@@ -15,8 +15,7 @@ class Publisher:
         self.topic = topic
         self.context = context
         self.socket = self.context.socket(zmq.PUB)
-        self.socket.connect(ZMQ_ADDRESS)
-
+        self.socket.bind(ZMQ_ADDRESS)
 
     async def publish(self, payload:str) -> None:
         message = [self.topic.encode("ascii"), payload.encode("ascii")]

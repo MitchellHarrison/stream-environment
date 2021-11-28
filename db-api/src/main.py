@@ -45,7 +45,6 @@ async def add_command(platform:str, payload:Request):
         return SUCCESS
 
     except Exception as e:
-        print(e)
         return FAILURE
 
 
@@ -109,7 +108,6 @@ async def get_commands(platform:str):
                 .where(TextCommands.platform == platform)
                 ).execute()
         commands = [c.name for c in result]
-        print(commands)
         return commands
 
     except Exception as e:

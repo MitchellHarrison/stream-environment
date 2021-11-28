@@ -11,21 +11,20 @@ from message import TwitchMessage
 
 TWITCH = "twitch_messages"
 YOUTUBE = "youtube_messages"
-BACKEND = os.environ.get("BACKEND", "127.0.0.1")
 CONTEXT = zmq.asyncio.Context()
 
 DB_API = os.environ.get("DB_API", "127.0.0.1")
 DATABASE = f"http://{DB_API}:1337"
 
-# zmq SUB socket parameters
 BACKEND_NAME = os.environ.get("BACKEND_NAME", "127.0.0.1")
 BACKEND_PORT = os.environ.get("BACKEND_PORT", "1336")
 BACKEND = f"http://{BACKEND_NAME}:{BACKEND_PORT}"
 
-TWITCH_READER = os.environ.get("TWITCH_READER", "127.0.0.1")
+# zmq sub parameters
+TWITCH_BOT = os.environ.get("TWITCH_BOT", "127.0.0.1")
+PROTOCOL = "tcp"
 ZMQ_PORT = 5555
-ZMQ_PROTOCOL = "tcp"
-TWITCH_ADDRESS = f"{ZMQ_PROTOCOL}://{TWITCH_READER}:{ZMQ_PORT}"
+TWITCH_ADDRESS = f"{PROTOCOL}://{TWITCH_BOT}:{ZMQ_PORT}"
 
 class ChatHandler:
     def __init__(self, twitch:str = TWITCH, context:zmq.asyncio.Context = CONTEXT,
@@ -36,7 +35,7 @@ class ChatHandler:
 
         # zmq SUB socket
         self.twitch_sock = self.context.socket(zmq.SUB)
-        print(self.twitch_address)
+        # tcp://twitch_chatbot:5555
         self.twitch_sock.connect(self.twitch_address)
         self.twitch_sock.setsockopt(zmq.SUBSCRIBE, bytes(self.twitch, "ascii"))
 
@@ -115,14 +114,13 @@ class ChatHandler:
         url = f"{DATABASE}/commands/get-all/{platform}/" 
         commands = await self.aio_get(url)
 
-        default_reply = "That's not a command, sorry!"
+        default_reply = ""
         if command in commands:
             output_url = f"{DATABASE}/commands/output/{platform}/{command}/"
             response = await self.aio_get(output_url)
             reply = response.get("output", default_reply)
         else:
             reply = default_reply
-
         return reply
 
 
@@ -143,5 +141,5 @@ class ChatHandler:
                 continue
 
             output = self.format_output(payload, message_data)
-            output_url = f"http://{BACKEND}:1336/chat/v1.0/"
+            output_url = f"{BACKEND}/chat/v1.0/"
             await self.aio_post(output_url, output)

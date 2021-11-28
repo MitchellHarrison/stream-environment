@@ -3,44 +3,42 @@ import os
 import uuid
 import json
 import zmq
-import zmq.asyncio
 from datetime import datetime
 from dataclasses import dataclass
 from dotenv import load_dotenv
+from zmq.asyncio import Context
 
 # try to get creds from Docker image
-try:
-    OAUTH_TOKEN = os.environ["OAUTH_TOKEN"]
-    BOT_NAME = os.environ["BOT_NAME"]
-    CHANNEL = os.environ["CHANNEL"]
-
-# get creds from local file (if running outside of Docker)
-except KeyError:
-    load_dotenv("../credentials.env")
-    OAUTH_TOKEN = os.getenv("OAUTH_TOKEN")
-    BOT_NAME = os.getenv("BOT_NAME")
-    CHANNEL = os.getenv("CHANNEL")
+OAUTH_TOKEN = os.environ["OAUTH_TOKEN"]
+BOT_NAME = os.environ["BOT_NAME"]
+CHANNEL = os.environ["CHANNEL"]
+OUTPUT_HANDLER = os.environ.get("OUTPUT_HANDLER", "chat_output_handler")
 
 # twitch irc server parameters
 SERVER = "irc.twitch.tv"
 PORT = 6667
 
-# zmq PUB parameters
-ZMQ_PORT = 5555
-ZMQ_HOST = "0.0.0.0"
-ZMQ_ADDRESS = f"tcp://{ZMQ_HOST}:{ZMQ_PORT}"
 TOPIC = "twitch_messages"
+OUTGOING_TOPIC = "twitch_output"
+ZMQ_PORT = 5555
 
+# zmq PUB address
+PUB_ADDRESS = f"tcp://0.0.0.0:{ZMQ_PORT}"
+
+# zmq SUB address
+SUB_ADDRESS = f"tcp://{OUTPUT_HANDLER}:{ZMQ_PORT}"
 
 @dataclass
-class Listener:
+class Bot:
     oauth_token: str = OAUTH_TOKEN
     bot_name: str = BOT_NAME
     channel: str = CHANNEL
     server: str = SERVER
     port: int = PORT
     topic: str = TOPIC
-    zmq_address: str = ZMQ_ADDRESS
+    outgoing_topic: str = OUTGOING_TOPIC
+    pub_address: str = PUB_ADDRESS
+    sub_address: str = SUB_ADDRESS
 
     def format_output(self, message:str) -> str:
         id_ = str(uuid.uuid4())
@@ -61,13 +59,16 @@ class Listener:
 
     async def publish_to_zmq(self, payload:str) -> None:
         message = [self.topic.encode("ascii"), payload.encode("ascii")]
-        print("Sending Message: ", message)
         await self.pub.send_multipart(message)
 
 
     async def send(self, message:str) -> None:
         self.writer.write(f"{message}\r\n".encode())
         await self.writer.drain()
+
+
+    async def send_chat_message(self, message:str) -> None:
+        await self.send(f"PRIVMSG #{self.channel} :{message}")
 
 
     async def pong(self) -> None:
@@ -82,17 +83,16 @@ class Listener:
         await self.send(f"PRIVMSG #{self.channel} :I'm listening!")
 
 
-    async def read(self) -> None:
-        self.context = zmq.asyncio.Context()
-        self.pub = self.context.socket(zmq.PUB)
-        self.pub.bind(self.zmq_address)
-
+    async def read_chat(self) -> None:
+        self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
+        await self.connect()
         while True:
             data = await self.reader.read(1024)
             try:
                 messages = data.decode()
             except UnicodeDecodeError:
                 raise(UnicodeDecodeError(data))
+
             if len(messages) == 0:
                 continue
 
@@ -108,7 +108,33 @@ class Listener:
                 await self.publish_to_zmq(payload)
 
 
-    async def run(self) -> None:
-        self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
-        await self.connect()
-        await self.read()
+    # read output messages from zmq
+    async def get_outgoing_messages(self) -> None:
+        # sub socket to receive chat output messages from zmq
+        self.sub_socket = self.context.socket(zmq.SUB)
+        self.sub_socket.connect(self.sub_address)
+        self.sub_socket.setsockopt(zmq.SUBSCRIBE, bytes(self.outgoing_topic, "ascii"))
+
+        while True:
+            # sleep to allow read_chat to create self.writer first
+            await asyncio.sleep(1)
+
+            _, msg = await self.sub_socket.recv_multipart()
+            payload = json.loads(msg)
+            print(f"MESSAGE RECEIVED: {payload}")
+            output_message = payload["data"]["message"]
+            
+            # ignore blank output messages for incorrect commands
+            if output_message:
+                await self.send_chat_message(output_message)
+
+
+    def run(self) -> None:
+        self.context = Context()
+
+        # pub socket to publish incoming messages to zmq
+        self.pub = self.context.socket(zmq.PUB)
+        self.pub.bind(self.pub_address)
+
+        cors = asyncio.wait([self.read_chat(), self.get_outgoing_messages()])
+        asyncio.get_event_loop().run_until_complete(cors)
