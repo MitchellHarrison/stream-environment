@@ -6,11 +6,12 @@ from datetime import datetime
 from fastapi import FastAPI, Request
 from publisher import Publisher
 
-DB_API_NAME = os.environ.get("DB_API_NAME", "127.0.0.1")
-DB_API_PORT = os.environ.get("DB_API_PORT", 1337)
+DB_API_NAME = os.environ["DB_API"]
+DB_API_PORT = os.environ["DB_API_PORT"]
 DATABASE = f"http://{DB_API_NAME}:{DB_API_PORT}/"
 
-ZMQ_PUB = "chat_output"
+ZMQ_PUB = os.environ["CHAT_OUT_TOPIC"]
+PORT = os.environ["BACKEND_PORT"]
 app = FastAPI()
 publisher = Publisher()
 
@@ -52,4 +53,4 @@ async def handle_message(payload:Request):
 
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=1336)
+    uvicorn.run(app, host="0.0.0.0", port=PORT)

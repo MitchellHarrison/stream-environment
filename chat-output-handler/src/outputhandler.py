@@ -6,8 +6,8 @@ import zmq
 import zmq.asyncio
 from dataclasses import dataclass
 
-BACKEND = os.environ.get("BACKEND", "127.0.0.1")
-PORT = 5555
+BACKEND = os.environ["BACKEND"]
+PORT = os.environ["ZMQ_PORT"]
 
 # zmq SUB socket address
 CHAT_ADDRESS = f"tcp://{BACKEND}:{PORT}"
@@ -18,10 +18,10 @@ TWITCH_ADDRESS = f"tcp://0.0.0.0:{PORT}"
 @dataclass
 class OutputHandler:
     context: zmq.asyncio.Context = zmq.asyncio.Context()
-    chat_sub_topic: str = "chat_output"
+    chat_sub_topic: str = os.environ["CHAT_OUT_TOPIC"]
     chat_address: str = CHAT_ADDRESS
     twitch_address: str = TWITCH_ADDRESS
-    twitch_queue: str = os.environ.get("TWITCH_QUEUE", "")
+    twitch_queue: str = os.environ["TWITCH_OUT_TOPIC"]
 
     def format_output(self, payload:dict) -> str:
         message = payload["data"]["message"]

@@ -4,11 +4,11 @@ from datetime import datetime
 from peewee import PostgresqlDatabase, Model, TextField, DateTimeField, IntegerField
 load_dotenv("../credentials.env")
 
-DB_USER = os.environ.get("DB_USER", "postgres")
-DB_PASS = os.environ.get("DB_PASS", "password")
-DB_NAME = os.environ.get("DB_NAME", "livestream")
-HOST = "database"
-PORT = 5432
+DB_USER = os.environ["PSQL_USER"]
+DB_PASS = os.environ["PSQL_PASS"]
+DB_NAME = os.environ["DB_NAME"]
+HOST = os.environ["DATABASE"]
+PORT = os.environ["PSQL_PORT"]
 
 database = PostgresqlDatabase(DB_NAME, user=DB_USER, password=DB_PASS, port=PORT, 
                               host=HOST, autorollback=True)
