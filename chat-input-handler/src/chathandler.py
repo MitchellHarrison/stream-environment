@@ -7,11 +7,8 @@ import zmq
 import zmq.asyncio
 import json
 from datetime import datetime
+from dataclasses import dataclass
 from message import TwitchMessage
-
-TWITCH = "twitch_messages"
-YOUTUBE = "youtube_messages"
-CONTEXT = zmq.asyncio.Context()
 
 DB_API = os.environ.get("DB_API", "127.0.0.1")
 DATABASE = f"http://{DB_API}:1337"
@@ -22,28 +19,14 @@ BACKEND = f"http://{BACKEND_NAME}:{BACKEND_PORT}"
 
 # zmq sub parameters
 TWITCH_BOT = os.environ.get("TWITCH_BOT", "127.0.0.1")
-PROTOCOL = "tcp"
 ZMQ_PORT = 5555
-TWITCH_ADDRESS = f"{PROTOCOL}://{TWITCH_BOT}:{ZMQ_PORT}"
+TWITCH_ADDRESS = f"tcp://{TWITCH_BOT}:{ZMQ_PORT}"
 
+@dataclass
 class ChatHandler:
-    def __init__(self, twitch:str = TWITCH, context:zmq.asyncio.Context = CONTEXT,
-                twitch_address:str = TWITCH_ADDRESS):
-        self.twitch = twitch
-        self.context = context
-        self.twitch_address = twitch_address
-
-        # zmq SUB socket
-        self.twitch_sock = self.context.socket(zmq.SUB)
-        # tcp://twitch_chatbot:5555
-        self.twitch_sock.connect(self.twitch_address)
-        self.twitch_sock.setsockopt(zmq.SUBSCRIBE, bytes(self.twitch, "ascii"))
-
-        self.twitch_pattern = re.compile(
-            fr"badges=(?P<badges>[^;]*).*display-name=(?P<display_name>[^;]*).*emotes=(?P<emotes>[^;]*);.+user-id=(?P<user_id>[\d]+).+:(?P<username>[\d\w]+)![^:]+:(?P<text>.*)\r",
-            flags=re.IGNORECASE
-        )
-
+    twitch: str = "twitch_messages"
+    context: zmq.asyncio.Context = zmq.asyncio.Context()
+    twitch_address: str = TWITCH_ADDRESS
 
     def format_output(self, input_payload:dict, message_data:dict) -> dict:
         output = {
@@ -125,6 +108,17 @@ class ChatHandler:
 
 
     async def run(self) -> None:
+        # zmq SUB socket
+        self.twitch_sock = self.context.socket(zmq.SUB)
+        self.twitch_sock.connect(self.twitch_address)
+        self.twitch_sock.setsockopt(zmq.SUBSCRIBE, bytes(self.twitch, "ascii"))
+
+        # regex pattern for parsing incoming twitch messages
+        self.twitch_pattern = re.compile(
+            fr"badges=(?P<badges>[^;]*).*display-name=(?P<display_name>[^;]*).*emotes=(?P<emotes>[^;]*);.+user-id=(?P<user_id>[\d]+).+:(?P<username>[\d\w]+)![^:]+:(?P<text>.*)\r",
+            flags=re.IGNORECASE
+        )
+
         while True:
             _, msg = await self.twitch_sock.recv_multipart()
             payload = json.loads(msg)
