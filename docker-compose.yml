@@ -83,7 +83,8 @@ services:
                 aliases:
                     - db_api
         depends_on:
-            - db
+            db:
+                condition: service_healthy
 
     db:
         container_name: database
@@ -98,6 +99,10 @@ services:
             stream-net:
                 aliases:
                     - database
+        healthcheck:
+            test: ["CMD", "psql", "-U", "postgres"]
+            interval: 2s
+            timeout: 2s
         volumes:
             - postgres_data:/var/lib/postgresql/13/main
 
