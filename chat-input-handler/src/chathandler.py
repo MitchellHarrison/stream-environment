@@ -10,21 +10,22 @@ from datetime import datetime
 from dataclasses import dataclass
 from message import TwitchMessage
 
-DB_API = os.environ.get("DB_API", "127.0.0.1")
-DATABASE = f"http://{DB_API}:1337"
+DB_API = os.environ["DB_API"]
+DB_API_PORT = os.environ["DB_API_PORT"]
+DATABASE = f"http://{DB_API}:{DB_API_PORT}"
 
-BACKEND_NAME = os.environ.get("BACKEND_NAME", "127.0.0.1")
-BACKEND_PORT = os.environ.get("BACKEND_PORT", "1336")
+BACKEND_NAME = os.environ["BACKEND"]
+BACKEND_PORT = os.environ["BACKEND_PORT"]
 BACKEND = f"http://{BACKEND_NAME}:{BACKEND_PORT}"
 
 # zmq sub parameters
-TWITCH_BOT = os.environ.get("TWITCH_BOT", "127.0.0.1")
-ZMQ_PORT = 5555
+TWITCH_BOT = os.environ["TWITCH_BOT"]
+ZMQ_PORT = os.environ["ZMQ_PORT"]
 TWITCH_ADDRESS = f"tcp://{TWITCH_BOT}:{ZMQ_PORT}"
 
 @dataclass
 class ChatHandler:
-    twitch: str = "twitch_messages"
+    twitch: str = os.environ["TWITCH_IN_TOPIC"]
     context: zmq.asyncio.Context = zmq.asyncio.Context()
     twitch_address: str = TWITCH_ADDRESS
 

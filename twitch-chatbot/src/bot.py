@@ -8,19 +8,12 @@ from dataclasses import dataclass
 from dotenv import load_dotenv
 from zmq.asyncio import Context
 
-# try to get creds from Docker image
 OAUTH_TOKEN = os.environ["OAUTH_TOKEN"]
 BOT_NAME = os.environ["BOT_NAME"]
 CHANNEL = os.environ["CHANNEL"]
-OUTPUT_HANDLER = os.environ.get("OUTPUT_HANDLER", "chat_output_handler")
+OUTPUT_HANDLER = os.environ["OUTPUT_HANDLER"]
 
-# twitch irc server parameters
-SERVER = "irc.twitch.tv"
-PORT = 6667
-
-TOPIC = "twitch_messages"
-OUTGOING_TOPIC = "twitch_output"
-ZMQ_PORT = 5555
+ZMQ_PORT = os.environ["ZMQ_PORT"]
 
 # zmq PUB address
 PUB_ADDRESS = f"tcp://0.0.0.0:{ZMQ_PORT}"
@@ -30,13 +23,13 @@ SUB_ADDRESS = f"tcp://{OUTPUT_HANDLER}:{ZMQ_PORT}"
 
 @dataclass
 class Bot:
-    oauth_token: str = OAUTH_TOKEN
-    bot_name: str = BOT_NAME
+    oauth_token: str = os.environ["OAUTH_TOKEN"]
+    bot_name: str = os.environ["BOT_NAME"]
     channel: str = CHANNEL
-    server: str = SERVER
-    port: int = PORT
-    topic: str = TOPIC
-    outgoing_topic: str = OUTGOING_TOPIC
+    server: str = "irc.twitch.tv"
+    port: int = os.environ["IRC_PORT"]
+    topic: str = os.environ["TWITCH_IN_TOPIC"]
+    outgoing_topic: str = os.environ["TWITCH_OUT_TOPIC"]
     pub_address: str = PUB_ADDRESS
     sub_address: str = SUB_ADDRESS
 
