@@ -10,7 +10,7 @@ class TwitchMessage:
         self.sent_time = sent_time
         self.message = message
         self.twitch_pattern = re.compile(
-            fr"badges=(?P<badges>[^;]*).*display-name=(?P<display_name>[^;]*).*emotes=(?P<emotes>[^;]*);.+user-id=(?P<user_id>[\d]+).+:[^:]+:(?P<text>.*)",
+            fr"badges=(?P<badges>[^;]*).*color=(?P<color>[^;]*).*display-name=(?P<display_name>[^;]*).*emotes=(?P<emotes>[^;]*);.+;id=(?P<message_id>[^;]*);.+user-id=(?P<user_id>[\d]+).*tv\sPRIVMSG\s(?P<channel>[^;]*)\s:(?P<text>.*)",
             flags=re.IGNORECASE
         )
 
@@ -19,7 +19,8 @@ class TwitchMessage:
         self.sender = TwitchUser(
             self.message_data.get("user_id", ""),
             self.message_data.get("display_name", ""),
-            self.get_badges(self.message_data.get("badges", ""))
+            self.get_badges(self.message_data.get("badges", "")),
+            self.message_data.get("color", "")
         )
 
         self.is_command = False
@@ -40,9 +41,16 @@ class TwitchMessage:
             "user_id": message_data.get("user_id", ""),
             "display_name": message_data.get("display_name", ""),
             "message": message_data.get("text", ""),
-            "badges": message_data.get("badges", "")
+            "badges": message_data.get("badges", ""),
+            "color": message_data.get("color", "")
         }
         return output
+
+
+    def display(self) -> None:
+        r,g,b = self.sender.color
+        print(f"\033[38;2;{r};{g};{b}m" + self.sender.display_name + 
+                "\033[38;2;255;255;255m", f"{self.text}\n")
 
 
     def get_badges(self, badges_str:str) -> list:
