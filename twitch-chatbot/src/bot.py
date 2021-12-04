@@ -103,15 +103,15 @@ class Bot:
 
     # read output messages from zmq
     async def get_outgoing_messages(self) -> None:
+        # sleep to allow self.read_chat() to create self.writer first
+        await asyncio.sleep(1)
+
         # sub socket to receive chat output messages from zmq
         self.sub_socket = self.context.socket(zmq.SUB)
         self.sub_socket.connect(self.sub_address)
         self.sub_socket.setsockopt(zmq.SUBSCRIBE, bytes(self.outgoing_topic, "ascii"))
 
         while True:
-            # sleep to allow read_chat to create self.writer first
-            await asyncio.sleep(1)
-
             _, msg = await self.sub_socket.recv_multipart()
             payload = json.loads(msg)
             print(f"MESSAGE RECEIVED: {payload}")
