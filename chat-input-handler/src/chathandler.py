@@ -57,6 +57,29 @@ class ChatHandler:
                 return
 
 
+    async def handle_chat_message(self, payload:dict) -> dict:
+        payload_data = payload.get("data", "")
+        platform = payload_data.get("platform", "")
+        sent_time = payload.get("time", str(datetime.now()))
+        message_data = {}
+
+        if platform == "twitch":
+            message = TwitchMessage(sent_time, payload_data.get("message", ""))
+            message_data = await self.handle_twitch_message(message)
+
+        elif platform == "youtube":
+            # youtube messages will be handled here
+            pass
+
+        if message_data:
+            output = self.format_output(payload, message_data)
+            # send data to database
+            await self.aio_post(f"{DATABASE}/chat/store/", output)
+
+            # send data to backend
+            await self.aio_post(f"{BACKEND}/chat/v1.0/", output)
+
+
     async def handle_twitch_message(self, message:TwitchMessage) -> dict:
         response = ""
         if message.is_command:
@@ -121,20 +144,7 @@ class ChatHandler:
         )
 
         while True:
+            # recieve message from twitch chat via zmq
             _, msg = await self.twitch_sock.recv_multipart()
             payload = json.loads(msg)
-            payload_data = payload.get("data", "")
-            platform = payload_data.get("platform", "")
-            sent_time = payload.get("time", str(datetime.now()))
-            message_data = {}
-
-            if platform == "twitch":
-                message = TwitchMessage(sent_time, payload_data.get("message", ""))
-                message_data = await self.handle_twitch_message(message)
-
-            if not message_data:
-                continue
-
-            output = self.format_output(payload, message_data)
-            output_url = f"{BACKEND}/chat/v1.0/"
-            await self.aio_post(output_url, output)
+            await self.handle_chat_message(payload)
