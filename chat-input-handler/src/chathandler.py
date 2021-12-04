@@ -65,6 +65,10 @@ class ChatHandler:
 
         if platform == "twitch":
             message = TwitchMessage(sent_time, payload_data.get("message", ""))
+
+            # print stylized message to terminal
+            message.display()
+
             message_data = await self.handle_twitch_message(message)
 
         elif platform == "youtube":
@@ -72,6 +76,7 @@ class ChatHandler:
             pass
 
         if message_data:
+            
             output = self.format_output(payload, message_data)
             # send data to database
             await self.aio_post(f"{DATABASE}/chat/store/", output)
@@ -136,12 +141,6 @@ class ChatHandler:
         self.twitch_sock = self.context.socket(zmq.SUB)
         self.twitch_sock.connect(self.twitch_address)
         self.twitch_sock.setsockopt(zmq.SUBSCRIBE, bytes(self.twitch, "ascii"))
-
-        # regex pattern for parsing incoming twitch messages
-        self.twitch_pattern = re.compile(
-            fr"badges=(?P<badges>[^;]*).*display-name=(?P<display_name>[^;]*).*emotes=(?P<emotes>[^;]*);.+user-id=(?P<user_id>[\d]+).+:(?P<username>[\d\w]+)![^:]+:(?P<text>.*)\r",
-            flags=re.IGNORECASE
-        )
 
         while True:
             # recieve message from twitch chat via zmq
