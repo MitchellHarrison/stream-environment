@@ -1,5 +1,5 @@
 import uvicorn
-from models import database, Tokens, TextCommands
+from models import database, Tokens, TextCommands, ChatMessages
 from fastapi import FastAPI, Request
 
 SUCCESS = {"status": "success"}
@@ -7,7 +7,7 @@ FAILURE = {"status": "failure"}
 PLATFORMS = ["twitch", "youtube"]
 
 app = FastAPI()
-database.create_tables([Tokens, TextCommands])
+database.create_tables([Tokens, TextCommands, ChatMessages])
 
 @app.get("/")
 async def main():
@@ -22,13 +22,13 @@ async def store_chat(payload:Request):
 @app.post("/commands/add/{platform}/")
 async def add_command(platform:str, payload:Request):
     data = await payload.json()
-    name = data["name"]
+    command = data["name"]
     output = data["output"]
 
     try:
         if platform.strip():
             statement = TextCommands.insert(
-                    name=name, 
+                    command=command, 
                     output=output,
                     platform=platform
                 )
@@ -36,7 +36,7 @@ async def add_command(platform:str, payload:Request):
         else:
             entries = []
             for platform in PLATFORMS:
-                entry = {"name":name, "output":output, "platform":platform}
+                entry = {"command":command, "output":output, "platform":platform}
                 entries.append(entry)
 
             statement = TextCommands.insert(entries)
@@ -51,7 +51,7 @@ async def add_command(platform:str, payload:Request):
 @app.post("/commands/edit/{platform}/")
 async def edit_command(platform:str, payload:Request):
     data = await payload.json()
-    name = data["name"]
+    command = data["name"]
     output = data["output"]
 
     try:
@@ -59,14 +59,14 @@ async def edit_command(platform:str, payload:Request):
             statement = (TextCommands
                         .update({TextCommands.output: output})
                         .where(
-                            TextCommands.name == name, 
+                            TextCommands.command == command, 
                             TextCommands.platform==platform
                             )
                         )
         else:
             statement = (TextCommands
                         .update({TextCommands.output: output})
-                        .where(TextCommands.name == name)
+                        .where(TextCommands.command == command)
                         )
         statement.execute()
         return SUCCESS
@@ -79,19 +79,19 @@ async def edit_command(platform:str, payload:Request):
 @app.post("/commands/delete/{platform}/")
 async def delete_command(platform:str, payload:Request):
     data = await payload.json()
-    name = data["name"]
+    command = data["name"]
 
     try:
         if platform.strip():
             statement = (TextCommands
                         .delete()
                         .where(
-                            TextCommands.name == name, 
+                            TextCommands.command == command, 
                             TextCommands.platform == platform
                             )
                         )
         else:
-            statement = TextCommands.delete().where(TextCommands.name == name)
+            statement = TextCommands.delete().where(TextCommands.command == command)
         statement.execute()
         return SUCCESS
 
@@ -107,7 +107,7 @@ async def get_commands(platform:str):
                 .select()
                 .where(TextCommands.platform == platform)
                 ).execute()
-        commands = [c.name for c in result]
+        commands = [c.command for c in result]
         return commands
 
     except Exception as e:
@@ -116,11 +116,11 @@ async def get_commands(platform:str):
 
 
 @app.get("/commands/output/{platform}/{name}/")
-async def get_command_output(platform:str, name:str) -> dict:
+async def get_command_output(platform:str, command:str) -> dict:
     try:
         output = TextCommands.get(
                 TextCommands.platform == platform,
-                TextCommands.name == name
+                TextCommands.command == command
                 ).output
         response = {"output": output}
         return response
@@ -154,6 +154,24 @@ async def get_token(payload:Request):
     return token
 
 
+# time, username, user_id, message, platform
+@app.post("/chat/store/")
+async def store_chat_message(payload:Request):
+    data = await payload.json()
+    dt = data["time"] 
+    username = data["data"]["username"]
+    user_id = data["data"]["user_id"]
+    message = data["data"]["message"]
+    platform = data["data"]["platform"]
+    
+    statement = ChatMessages.insert(
+            time = dt,
+            username = username,
+            user_id = user_id, 
+            message = message,
+            platform = platform
+        )
+    statement.execute()
+
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=1337)
-

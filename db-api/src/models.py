@@ -1,8 +1,11 @@
 import os
-from dotenv import load_dotenv
 from datetime import datetime
-from peewee import PostgresqlDatabase, Model, TextField, DateTimeField, IntegerField
-load_dotenv("../credentials.env")
+from peewee import PostgresqlDatabase
+from peewee import Model 
+from peewee import TextField
+from peewee import DateTimeField
+from peewee import IntegerField
+from peewee import CharField
 
 DB_USER = os.environ["PSQL_USER"]
 DB_PASS = os.environ["PSQL_PASS"]
@@ -19,12 +22,23 @@ class BaseModel(Model):
 
 
 class Tokens(BaseModel):
-    name = TextField(unique=True)
-    token = TextField()
+    name = CharField(unique=True)
+    token = CharField()
 
 
 class TextCommands(BaseModel):
-    name = TextField(unique=True)
-    platform = TextField()
-    output = TextField()
+    command = CharField(unique=True)
+    platform = CharField()
+    output = CharField()
+    class Meta:
+        table_name = "text_commands"
 
+
+class ChatMessages(BaseModel):
+    time = DateTimeField()
+    username = CharField()
+    user_id = CharField()
+    message = CharField()
+    platform = CharField()
+    class Meta:
+        table_name = "chat_messages"
