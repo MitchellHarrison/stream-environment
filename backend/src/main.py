@@ -38,10 +38,9 @@ async def handle_message(payload:Request):
     platform = data["platform"]
 
     if data["is_command"]:
-        default_response = ""
-        response = data.get("response", default_response)
+        response = data.get("response", None)
 
-        # invalid commands will have falsey response
+        # ignore payloads with no response
         if response:
             output = format_message_response(message, platform, response)
             await publisher.publish(output)

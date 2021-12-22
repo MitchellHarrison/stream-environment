@@ -1,5 +1,6 @@
 import asyncio
 import aiohttp
+import command
 import re
 import os
 import uuid
@@ -7,7 +8,6 @@ import zmq
 import zmq.asyncio
 import json
 from datetime import datetime
-from dataclasses import dataclass
 from message import TwitchMessage
 
 DB_API = os.environ["DB_API"]
@@ -23,20 +23,34 @@ TWITCH_BOT = os.environ["TWITCH_BOT"]
 ZMQ_PORT = os.environ["ZMQ_PORT"]
 TWITCH_ADDRESS = f"tcp://{TWITCH_BOT}:{ZMQ_PORT}"
 
-@dataclass
-class ChatHandler:
-    twitch: str = os.environ["TWITCH_IN_TOPIC"]
-    context: zmq.asyncio.Context = zmq.asyncio.Context()
-    twitch_address: str = TWITCH_ADDRESS
+# all command objects 
+COMMANDS = (c() for c in command.Command.__subclasses__())
 
-    def format_output(self, input_payload:dict, message_data:dict) -> dict:
+class ChatHandler:
+    def __init__(self):
+        self.twitch = os.environ["TWITCH_IN_TOPIC"]
+        self.context = zmq.asyncio.Context()
+        self.twitch_address = TWITCH_ADDRESS
+        self.hard_commands = {s.command_name: s for s in COMMANDS}
+
+
+    def format_output(self, message:TwitchMessage) -> dict:
         output = {
             "id": str(uuid.uuid4()),
             "source": "chat.handler", 
             "specversion": "1.0",
             "type": "chat_message",
-            "time": input_payload.get("time", str(datetime.now())),
-            "data": message_data
+            "time": message.sent_time,
+            "data": {
+                "platform": message.platform,
+                "machine": "chat_input_handler1",
+                "user_id": message.sender.user_id,
+                "username": message.sender.username,
+                "display_name": message.sender.display_name,
+                "message": message.text,
+                "is_command": message.is_command,
+                "response": message.reply
+            }
         }
         return output
 
@@ -61,64 +75,20 @@ class ChatHandler:
         payload_data = payload.get("data", "")
         platform = payload_data.get("platform", "")
         sent_time = payload.get("time", str(datetime.now()))
-        message_data = {}
+        message = False
 
         if platform == "twitch":
             message = TwitchMessage(sent_time, payload_data.get("message", ""))
-
-            # print stylized message to terminal
-            message.display()
-
-            message_data = await self.handle_twitch_message(message)
+            await message.update_reply()
 
         elif platform == "youtube":
             # youtube messages will be handled here
             pass
 
-        if message_data:
-            
-            output = self.format_output(payload, message_data)
-            # send data to database
+        if message:
+            output = self.format_output(message)
             await self.aio_post(f"{DATABASE}/chat/store/", output)
-
-            # send data to backend
             await self.aio_post(f"{BACKEND}/chat/v1.0/", output)
-
-
-    async def handle_twitch_message(self, message:TwitchMessage) -> dict:
-        response = ""
-        if message.is_command:
-            command = message.text.split()[0]
-            if message.command == "!addcommand" and message.sender.is_broadcaster:
-                first_word = message.text.split()[1]
-                name = first_word if first_word.startswith("!") else f"!{first_word}"
-                entry = {
-                    "name": name, 
-                    "output": message.text.split(" ", 2)[-1]
-                }
-                entry_url = f"{DATABASE}/commands/add/twitch/"
-                await self.aio_post(entry_url, entry)
-
-            elif message.command == "!delcommand" and message.sender.is_broadcaster:
-                first_word = message.text.split()[1]
-                name = first_word if first_word.startswith("!") else f"!{first_word}"
-                
-                payload = {"name": name}
-                await self.aio_post(f"{DATABASE}/commands/delete/twitch/", payload)
-
-            response = await self.get_command_response(command, "twitch")
-
-        output = {
-            "platform": "twitch",
-            "machine": "chat_input_handler1",
-            "user_id": message.sender.user_id,
-            "username": message.sender.username,
-            "display_name": message.sender.display_name,
-            "message": message.text,
-            "is_command": message.is_command,
-            "response": response
-        }
-        return output
 
 
     async def get_command_response(self, command:str, platform:str) -> str:

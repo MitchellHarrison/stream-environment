@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 
 SUCCESS = {"status": "success"}
 FAILURE = {"status": "failure"}
-PLATFORMS = ["twitch", "youtube"]
+PLATFORMS = ["twitch"]
 
 app = FastAPI()
 database.create_tables([Tokens, TextCommands, ChatMessages])
@@ -22,10 +22,12 @@ async def store_chat(payload:Request):
 @app.post("/commands/add/{platform}/")
 async def add_command(platform:str, payload:Request):
     data = await payload.json()
-    command = data["name"]
+    print(data)
+    command = data["command"]
     output = data["output"]
 
     try:
+        # only add to a single platform
         if platform.strip():
             statement = TextCommands.insert(
                     command=command, 
@@ -33,6 +35,7 @@ async def add_command(platform:str, payload:Request):
                     platform=platform
                 )
 
+        # add to all platforms
         else:
             entries = []
             for platform in PLATFORMS:
@@ -79,6 +82,7 @@ async def edit_command(platform:str, payload:Request):
 @app.post("/commands/delete/{platform}/")
 async def delete_command(platform:str, payload:Request):
     data = await payload.json()
+    print(data)
     command = data["name"]
 
     try:
@@ -115,7 +119,7 @@ async def get_commands(platform:str):
         return FAILURE
 
 
-@app.get("/commands/output/{platform}/{name}/")
+@app.get("/commands/output/{platform}/{command}/")
 async def get_command_output(platform:str, command:str) -> dict:
     try:
         output = TextCommands.get(
