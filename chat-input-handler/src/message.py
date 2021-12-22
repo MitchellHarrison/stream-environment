@@ -18,17 +18,13 @@ class TwitchMessage:
         self.platform = "twitch"
         self.sent_time = sent_time
         self.message = message
-        self.twitch_pattern = re.compile(
-            fr"badges=(?P<badges>[^;]*).*color=(?P<color>[^;]*).*display-name=(?P<display_name>[^;]*).*emotes=(?P<emotes>[^;]*);.+;id=(?P<message_id>[^;]*);.+user-id=(?P<user_id>[\d]+).*tv\sPRIVMSG\s(?P<channel>[^;]*)\s:(?P<text>.*)",
-            flags=re.IGNORECASE
-        )
 
         self.message_data = self.parse(self.message)
         self.text = self.message_data.get("message", "")
         self.sender = TwitchUser(
-            self.message_data.get("user_id", ""),
-            self.message_data.get("display_name", ""),
-            self.get_badges(self.message_data.get("badges", "")),
+            self.message_data.get("user-id", ""),
+            self.message_data.get("display-name", ""),
+            self.message_data.get("badges", []),
             self.message_data.get("color", "")
         )
 
@@ -43,31 +39,26 @@ class TwitchMessage:
 
 
     def parse(self, message:str) -> dict:
-        message_data = {}
-        try:
-            message_data = self.twitch_pattern.search(message).groupdict() 
-        except AttributeError:
-            pass
+        if "PRIVMSG" in message:
+            all_tags = message.split()[0]
+            text = message.split("PRIVMSG")[1].split(":", maxsplit=1)[-1]
+            output = {"message":text}
 
-        output = {
-            "user_id": message_data.get("user_id", ""),
-            "display_name": message_data.get("display_name", ""),
-            "message": message_data.get("text", ""),
-            "badges": message_data.get("badges", ""),
-            "color": message_data.get("color", "")
-        }
-        return output
+            tag_strings = all_tags.split(";") 
+            required_tags = ["user-id", "display-name", "badges", "color"]
+            for t in tag_strings:
+                k,v = t.split("=")
+                if k in required_tags:
+                    if k == "badges":
+                        v = [b[0] for b in (e.split("/") for e in v.split(","))]
+                    output[k] = v
+            return output
 
 
     def display(self) -> None:
         r,g,b = self.sender.color
         print(f"\033[38;2;{r};{g};{b}m" + self.sender.display_name + 
                 "\033[38;2;255;255;255m", f"{self.text}\n")
-
-
-    def get_badges(self, badges_str:str) -> list:
-        badges = [badge.split("/")[0] for badge in badges_str.split(",")] 
-        return badges
 
 
     # wrapper around aiohttp get logic
