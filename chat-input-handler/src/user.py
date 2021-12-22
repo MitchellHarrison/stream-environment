@@ -1,7 +1,7 @@
 import random
 
 class TwitchUser:
-    def __init__(self, user_id:str, display_name:str, roles:list, color:str):
+    def __init__(self, user_id="", display_name="", roles=[], color=""):
         self.user_id = user_id
         self.display_name = display_name
         self.username = self.display_name.lower()
