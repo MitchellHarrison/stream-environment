@@ -41,7 +41,7 @@ class TwitchMessage:
     def parse(self, message:str) -> dict:
         if "PRIVMSG" in message:
             all_tags = message.split()[0]
-            text = message.split("PRIVMSG")[1].split(":", maxsplit=1)[-1]
+            text = message.split("PRIVMSG")[1].split(":", maxsplit=1)[-1].strip()
             output = {"message":text}
 
             tag_strings = all_tags.split(";") 
