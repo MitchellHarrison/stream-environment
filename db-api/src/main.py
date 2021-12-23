@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request
 
 SUCCESS = {"status": "success"}
 FAILURE = {"status": "failure"}
-PLATFORMS = ["twitch"]
+PLATFORMS = ["twitch", "youtube"]
 
 app = FastAPI()
 database.create_tables([Tokens, TextCommands, ChatMessages])
@@ -22,28 +22,26 @@ async def store_chat(payload:Request):
 @app.post("/commands/add/{platform}/")
 async def add_command(platform:str, payload:Request):
     data = await payload.json()
-    print(data)
     command = data["command"]
     output = data["output"]
 
     try:
-        # only add to a single platform
-        if platform.strip():
-            statement = TextCommands.insert(
-                    command=command, 
-                    output=output,
-                    platform=platform
-                )
-
         # add to all platforms
-        else:
+        if platform == "all":
             entries = []
             for platform in PLATFORMS:
                 entry = {"command":command, "output":output, "platform":platform}
                 entries.append(entry)
 
-            statement = TextCommands.insert(entries)
+            statement = TextCommands.insert_many(entries)
 
+        # only add to a single platform
+        else:
+            statement = TextCommands.insert(
+                    command=command, 
+                    output=output,
+                    platform=platform
+                )
         statement.execute()
         return SUCCESS
 
@@ -59,7 +57,13 @@ async def edit_command(platform:str, payload:Request):
     output = data["output"]
 
     try:
-        if platform.strip():
+        if platform == "all":
+            statement = (TextCommands
+                        .update({TextCommands.output: output})
+                        .where(TextCommands.command == command)
+                        )
+
+        else:
             statement = (TextCommands
                         .update({TextCommands.output: output})
                         .where(
@@ -67,11 +71,7 @@ async def edit_command(platform:str, payload:Request):
                             TextCommands.platform == platform
                             )
                         )
-        else:
-            statement = (TextCommands
-                        .update({TextCommands.output: output})
-                        .where(TextCommands.command == command)
-                        )
+        print(statement)
         statement.execute()
         return SUCCESS
 
@@ -83,11 +83,13 @@ async def edit_command(platform:str, payload:Request):
 @app.post("/commands/delete/{platform}/")
 async def delete_command(platform:str, payload:Request):
     data = await payload.json()
-    print(data)
     command = data["name"]
 
     try:
-        if platform.strip():
+        if platform == "all":
+            statement = TextCommands.delete().where(TextCommands.command == command)
+
+        else:
             statement = (TextCommands
                         .delete()
                         .where(
@@ -95,8 +97,6 @@ async def delete_command(platform:str, payload:Request):
                             TextCommands.platform == platform
                             )
                         )
-        else:
-            statement = TextCommands.delete().where(TextCommands.command == command)
         statement.execute()
         return SUCCESS
 

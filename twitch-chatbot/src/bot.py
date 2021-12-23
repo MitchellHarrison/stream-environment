@@ -114,7 +114,6 @@ class Bot:
         while True:
             _, msg = await self.sub_socket.recv_multipart()
             payload = json.loads(msg)
-            print(f"MESSAGE RECEIVED: {payload}")
             output_message = payload["data"]["message"]
             
             # ignore blank output messages for incorrect commands
