@@ -7,7 +7,8 @@ from datetime import datetime
 from user import TwitchUser
 
 COMMAND_TRIGGER = os.environ["COMMAND_TRIGGER"]
-HARD_COMMANDS = {s.command_name: s for s in (c() for c in Command.__subclasses__())}
+SUBCLASSES = (c() for c in Command.__subclasses__())
+HARD_COMMANDS = {s.command_name.lstrip(COMMAND_TRIGGER): s for s in SUBCLASSES}
 
 DB_API = os.environ["DB_API"]
 DB_API_PORT = os.environ["DB_API_PORT"]
@@ -32,7 +33,7 @@ class TwitchMessage:
         self.command_name = ""
         if self.text.startswith(COMMAND_TRIGGER):
             self.is_command = True
-            self.command_name = self.text.split()[0]
+            self.command_name = self.text.split()[0].lstrip(COMMAND_TRIGGER)
         self.reply = None
 
         self.display()
