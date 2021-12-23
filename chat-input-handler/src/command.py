@@ -58,6 +58,27 @@ class AddCommand(Command):
         await self.aio_post(url, payload)
 
 
+class EditCommand(Command):
+    @property
+    def command_name(self) -> str:
+        return f"{TRIGGER}editcommand"
+
+    @property
+    def restricted(self) -> bool:
+        return True
+
+    async def execute(self, user=TwitchUser(), message=""):
+        name = message.split()[1].lstrip(TRIGGER)
+        new_output = message.split(maxsplit=2)[-1]
+        url = f"{DATABASE}/commands/edit/twitch"
+        payload = {
+            "name": name,
+            "output": new_output
+        }
+        print(payload)
+        await self.aio_post(url, payload)
+
+
 class DelCommand(Command):
     @property
     def command_name(self) -> str:
