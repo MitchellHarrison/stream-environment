@@ -6,7 +6,7 @@ from command import Command
 from datetime import datetime
 from user import TwitchUser
 
-COMMAND_TRIGGER = "!"
+COMMAND_TRIGGER = os.environ["COMMAND_TRIGGER"]
 HARD_COMMANDS = {s.command_name: s for s in (c() for c in Command.__subclasses__())}
 
 DB_API = os.environ["DB_API"]
@@ -97,11 +97,3 @@ class TwitchMessage:
                     response_url = f"{DATABASE}/commands/output/twitch/{self.command_name}/"
                     response = await self.aio_get(response_url)
                     self.reply = response["output"]
-                
-            # delcommand logic
-            # if message.command == "!delcommand" and message.sender.is_broadcaster:
-            #     first_word = message.text.split()[1]
-            #     name = first_word if first_word.startswith("!") else f"!{first_word}"
-            #     
-            #     payload = {"name": name}
-            #     await self.aio_post(f"{DATABASE}/commands/delete/twitch/", payload)
