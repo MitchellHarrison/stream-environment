@@ -32,7 +32,6 @@ class ChatHandler:
         self.context = zmq.asyncio.Context()
         self.twitch_address = TWITCH_ADDRESS
         self.hard_commands = {s.command_name: s for s in COMMANDS}
-        print(self.hard_commands.keys())
 
 
     def format_output(self, message:TwitchMessage) -> dict:

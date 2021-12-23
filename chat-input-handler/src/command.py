@@ -78,6 +78,18 @@ class DelCommand(Command):
         await self.aio_post(url, payload)
         
 
+class Commands(Command):
+    @property
+    def command_name(self) -> str:
+        return f"{TRIGGER}commands"
+
+    async def execute(self, user=TwitchUser(), message=""):
+        hard_commands = [c.command_name for c in (s() for s in Command.__subclasses__())]
+        url = f"{DATABASE}/commands/get-all/twitch"
+        text_commands = await self.aio_get(url)
+        all_commands = hard_commands + [f"{TRIGGER}{c}" for c in text_commands]
+        return ", ".join(sorted(all_commands))
+
 
 class Joke(Command):
     @property
@@ -124,5 +136,3 @@ class Poem(Command):
 
         # on failure to find a poem, return error_message
         return error_message
-
-        
