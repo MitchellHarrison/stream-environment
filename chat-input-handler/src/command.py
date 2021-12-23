@@ -70,7 +70,7 @@ class EditCommand(Command):
     async def execute(self, user=TwitchUser(), message=""):
         name = message.split()[1].lstrip(TRIGGER)
         new_output = message.split(maxsplit=2)[-1]
-        url = f"{DATABASE}/commands/edit/twitch"
+        url = f"{DATABASE}/commands/edit/twitch/"
         payload = {
             "name": name,
             "output": new_output
@@ -106,7 +106,7 @@ class Commands(Command):
 
     async def execute(self, user=TwitchUser(), message=""):
         hard_commands = [c.command_name for c in (s() for s in Command.__subclasses__())]
-        url = f"{DATABASE}/commands/get-all/twitch"
+        url = f"{DATABASE}/commands/get-all/twitch/"
         text_commands = await self.aio_get(url)
         all_commands = hard_commands + [f"{TRIGGER}{c}" for c in text_commands]
         return ", ".join(sorted(all_commands))

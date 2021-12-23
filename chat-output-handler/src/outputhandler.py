@@ -38,12 +38,10 @@ class OutputHandler:
         return json.dumps(output)
         
     async def route(self, platform:str, payload:str) -> None:
-        print(f"topic = {self.twitch_queue}")
         message = [self.twitch_queue.encode("ascii"), payload.encode("ascii")]
         try:
             if platform == "twitch":
                 await self.twitch_socket.send_multipart(message)
-                print(f"OUTGOING {payload}")
             else:
                 # this is where another streaming platform output would be
                 pass

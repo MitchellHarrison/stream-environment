@@ -27,7 +27,7 @@ class Tokens(BaseModel):
 
 
 class TextCommands(BaseModel):
-    command = CharField(unique=True)
+    command = CharField()
     platform = CharField()
     output = CharField()
     class Meta:
