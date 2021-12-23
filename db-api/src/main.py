@@ -54,6 +54,7 @@ async def add_command(platform:str, payload:Request):
 @app.post("/commands/edit/{platform}/")
 async def edit_command(platform:str, payload:Request):
     data = await payload.json()
+    print(data)
     command = data["name"]
     output = data["output"]
 
@@ -63,7 +64,7 @@ async def edit_command(platform:str, payload:Request):
                         .update({TextCommands.output: output})
                         .where(
                             TextCommands.command == command, 
-                            TextCommands.platform==platform
+                            TextCommands.platform == platform
                             )
                         )
         else:
