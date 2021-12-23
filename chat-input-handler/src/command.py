@@ -8,6 +8,7 @@ MAX_MESSAGE_LENGTH = 500
 DB_API = os.environ["DB_API"]
 DB_API_PORT = os.environ["DB_API_PORT"]
 DATABASE = f"http://{DB_API}:{DB_API_PORT}"
+TRIGGER = os.environ["COMMAND_TRIGGER"]
 
 class Command(ABC):
     @property
@@ -39,7 +40,7 @@ class Command(ABC):
 class AddCommand(Command):
     @property
     def command_name(self) -> str:
-        return "!addcommand"
+        return f"{TRIGGER}addcommand"
 
     @property
     def restricted(self) -> bool:
@@ -47,8 +48,8 @@ class AddCommand(Command):
 
     async def execute(self, user:TwitchUser, message:str):
         command = message.split()[1]
-        if not command.startswith("!"):
-            command = f"!{command}"
+        if command.startswith(TRIGGER):
+           command = command.lstrip(TRIGGER)
         output = message.split(maxsplit=2)[-1]
 
         # add entry to text_command table
@@ -60,7 +61,7 @@ class AddCommand(Command):
 class DelCommand(Command):
     @property
     def command_name(self) -> str:
-        return "!delcommand"
+        return f"{TRIGGER}delcommand"
 
     @property
     def restricted(self) -> bool:
@@ -68,8 +69,8 @@ class DelCommand(Command):
 
     async def execute(self, user=TwitchUser(), message=""):
         command = message.split()[1]
-        if not command.startswith("!"):
-            command = f"!{command}"
+        if command.startswith(TRIGGER):
+            command = command.lstrip(TRIGGER)
 
         # remove text command from database
         payload = {"name": command}
@@ -81,7 +82,7 @@ class DelCommand(Command):
 class Joke(Command):
     @property
     def command_name(self) -> str:
-        return "!joke"
+        return f"{TRIGGER}joke"
 
     async def execute(self, user=TwitchUser(), message=""):
         error_message = "I couldn't find a short enough joke. Sorry!"
@@ -101,7 +102,7 @@ class Joke(Command):
 class Poem(Command):
     @property
     def command_name(self) -> str:
-        return "!poem"
+        return f"{TRIGGER}poem"
 
     async def execute(self, user=TwitchUser(), message=""):
         num_lines = 4
