@@ -97,7 +97,7 @@ services:
             interval: 2s
             timeout: 2s
         volumes:
-            - postgres_data:/var/lib/postgresql/13/main
+            - postgres_data:/var/lib/postgresql/data/
 
 volumes:
     postgres_data:
