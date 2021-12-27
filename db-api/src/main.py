@@ -14,11 +14,6 @@ async def main():
     return "Running!"
 
 
-@app.post("/chat/write/")
-async def store_chat(payload:Request):
-    pass
-
-
 @app.post("/commands/add/{platform}/")
 async def add_command(platform:str, payload:Request):
     data = await payload.json()
@@ -176,6 +171,15 @@ async def store_chat_message(payload:Request):
             message = message,
             platform = platform
         )
+    statement.execute()
+
+
+# remove all user's messages from DB by user_id
+@app.post("/chat/forget/")
+async def forget_user(payload:Request):
+    data = await payload.json()
+    user_id = data["user_id"]
+    statement = ChatMessages.delete().where(ChatMessages.user_id == user_id)
     statement.execute()
 
 if __name__ == "__main__":

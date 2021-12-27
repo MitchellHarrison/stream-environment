@@ -28,14 +28,14 @@ class TwitchMessage:
             self.message_data.get("badges", []),
             self.message_data.get("color", "")
         )
-
+        
+        self.store = True
         self.is_command = False
         self.command_name = ""
         if self.text.startswith(COMMAND_TRIGGER):
             self.is_command = True
             self.command_name = self.text.split()[0].lstrip(COMMAND_TRIGGER)
         self.reply = None
-
         self.display()
 
 
@@ -83,6 +83,7 @@ class TwitchMessage:
             # update reply from command object
             if self.command_name in HARD_COMMANDS:
                 command = HARD_COMMANDS[self.command_name]
+                self.store = command.store
                 user_is_priv = (self.sender.is_mod or self.sender.is_broadcaster)
                 if command.restricted and not user_is_priv:
                     sender_name = self.sender.display_name

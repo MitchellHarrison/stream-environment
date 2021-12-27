@@ -87,8 +87,9 @@ class ChatHandler:
 
         if message:
             output = self.format_output(message)
-            await self.aio_post(f"{DATABASE}/chat/store/", output)
             await self.aio_post(f"{BACKEND}/chat/v1.0/", output)
+            if message.store:
+                await self.aio_post(f"{DATABASE}/chat/store/", output)
 
 
     async def get_command_response(self, command:str, platform:str) -> str:
