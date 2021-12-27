@@ -1,10 +1,11 @@
 import asyncio
 import os
-import uuid
 import json
+import time
+import uuid
 import zmq
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from dotenv import load_dotenv
 from zmq.asyncio import Context
 
@@ -77,7 +78,21 @@ class Bot:
 
 
     async def read_chat(self) -> None:
-        self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
+        exp = 0
+        connected = False
+        while not connected:
+            try:
+                self.reader, self.writer = await asyncio.open_connection(self.server, self.port)
+                connected = True
+                print("Connected to Twitch IRC")
+
+            # retry connection at increasing intervals
+            except ConnectionResetError as e:
+                print(e)
+                print(f"Connection to Twitch failed. Retrying in {2**exp} second(s)...")
+                time.sleep(2**exp)
+                exp += 1
+
         await self.connect()
         while True:
             data = await self.reader.read(1024)
@@ -94,7 +109,7 @@ class Bot:
 
             # ignore initial connection messages
             elif messages.startswith(":tmi.twitch.tv"):
-                print("Connected...")
+                pass
 
             else:
                 payload = self.format_output(messages)
