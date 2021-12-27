@@ -30,6 +30,7 @@ class TextCommands(BaseModel):
     command = CharField()
     platform = CharField()
     output = CharField()
+    help_output = CharField(default="There's no help for that command. Sorry!")
     class Meta:
         table_name = "text_commands"
 

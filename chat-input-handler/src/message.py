@@ -85,6 +85,7 @@ class TwitchMessage:
                 command = HARD_COMMANDS[self.command_name]
                 self.store = command.store
                 user_is_priv = (self.sender.is_mod or self.sender.is_broadcaster)
+
                 if command.restricted and not user_is_priv:
                     sender_name = self.sender.display_name
                     self.reply = f"You need to be a mod to use that command, {sender_name}."
