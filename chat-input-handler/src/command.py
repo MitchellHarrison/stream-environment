@@ -21,6 +21,10 @@ class Command(ABC):
     def restricted(self) -> bool:
         return False
 
+    @property
+    def store(self) -> bool:
+        return True
+
     @abstractmethod
     async def execute(self, user=TwitchUser(), message=""):
         raise NotImplementedError
@@ -98,6 +102,22 @@ class DelCommand(Command):
         url = f"{DATABASE}/commands/delete/twitch/"
         await self.aio_post(url, payload)
         
+
+class ForgetMe(Command):
+    @property
+    def command_name(self) -> str:
+        return f"{TRIGGER}forgetme"
+
+    @property
+    def store(self) -> bool:
+        return False
+
+    async def execute(self, user=TwitchUser(), message=""):
+        payload = {"user_id": user.user_id}
+        url = f"{DATABASE}/chat/forget/"
+        await self.aio_post(url, payload)
+        return f"Your data has been removed, {user.display_name}!"
+
 
 class Commands(Command):
     @property
