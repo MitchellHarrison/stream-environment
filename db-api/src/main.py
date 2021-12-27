@@ -130,6 +130,38 @@ async def get_command_output(platform:str, command:str) -> dict:
         return FAILURE
 
 
+@app.get("/commands/help/{platform}/{command}")
+async def get_command_help(platform:str, command:str) -> dict:
+    try:
+        output = TextCommands.get(
+                TextCommands.platform == platform,
+                TextCommands.command == command
+                ).help_output
+        response = {"output": output}
+        return response
+
+    except Exception as e:
+        print(e)
+        return FAILURE
+
+
+@app.post("/commands/help/edit/{platform}/{command}")
+async def edit_command_help(platform:str, command:str, payload:Request):
+    data = await payload.json()
+    help_output = data["help_output"]
+    try:
+        statement = (TextCommands
+                    .update({TextCommands.help_output: help_output})
+                    .where(TextCommands.command == command)
+                    )
+        statement.execute()
+
+    except Exception as e:
+        print(e)
+        return FAILURE
+
+
+
 @app.post("/tokens/set/")
 async def set_token(payload:Request):
     data = await payload.json()
