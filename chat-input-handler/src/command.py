@@ -136,7 +136,11 @@ class Help(Command):
     
     @property
     def help(self) -> str:
-        return f"{self.command_name} will give you a small summary of a command's function!"
+        output = f"""
+        Use {self.command_name} followed by a second command name to get information 
+        about that command! For example: {self.command_name} {TRIGGER}commands
+        """
+        return output.replace("\n", "")
 
     async def execute(self, user=TwitchUser(), message=""):
         subclasses = (s() for s in Command.__subclasses__())
