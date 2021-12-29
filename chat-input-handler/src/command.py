@@ -155,7 +155,7 @@ class Help(Command):
             response = api_response.get("output", response)
 
         else:
-            response = f"That's not a command, {user.disply_name}."
+            response = f"That's not a command, {user.display_name}."
 
         return response
 
@@ -201,7 +201,13 @@ class Commands(Command):
         return f"{TRIGGER}commands"
 
     async def execute(self, user=TwitchUser(), message=""):
-        hard_commands = [c.command_name for c in (s() for s in Command.__subclasses__())]
+        # only include restricted commands if user is a mod or broadcaster
+        subclasses = (s() for s in Command.__subclasses__())
+
+        if not (user.is_mod or user.is_broadcaster):
+            subclasses = (c for c in subclasses if not c.restricted)
+
+        hard_commands = [c.command_name for c in subclasses]
         url = f"{DATABASE}/commands/get-all/twitch/"
         text_commands = await self.aio_get(url)
         all_commands = hard_commands + [f"{TRIGGER}{c}" for c in text_commands]
