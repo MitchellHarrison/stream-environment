@@ -57,6 +57,8 @@ class AddCommand(Command):
         return True
 
     async def execute(self, user:TwitchUser, message:str):
+        if len(message.split()) <= 1:
+            return
         command = message.split()[1]
         if command.startswith(TRIGGER):
            command = command.lstrip(TRIGGER)
@@ -78,6 +80,8 @@ class EditCommand(Command):
         return True
 
     async def execute(self, user=TwitchUser(), message=""):
+        if len(message.split()) <= 1:
+            return
         name = message.split()[1].lstrip(TRIGGER)
         new_output = message.split(maxsplit=2)[-1]
         url = f"{DATABASE}/commands/edit/twitch/"
@@ -99,6 +103,8 @@ class DelCommand(Command):
         return True
 
     async def execute(self, user=TwitchUser(), message=""):
+        if len(message.split()) <= 1:
+            return
         command = message.split()[1]
         if command.startswith(TRIGGER):
             command = command.lstrip(TRIGGER)
@@ -137,7 +143,7 @@ class Help(Command):
     @property
     def help(self) -> str:
         output = f"""
-        Use {self.command_name} followed by a second command name to get information 
+        Use {self.command_name} followed by a second command name to get information
         about that command! For example: {self.command_name} {TRIGGER}commands
         """
         return output.replace("\n", "")
@@ -147,8 +153,15 @@ class Help(Command):
         hard_commands = {c.command_name.strip(TRIGGER): c for c in subclasses}
         text_commands = await self.aio_get(f"{DATABASE}/commands/get-all/twitch/")
         response = f"That's not a command, {user.display_name}!"
+
+        if len(message.split()) <= 1:
+            response = f"""
+            The {self.command_name} command requires a second command name as an
+            argument. Type \"{self.command_name} {self.command_name.strip(TRIGGER)}\"
+            for more information.
+            """
+            return response.replace("\n", "")
         command = message.split()[1].strip(TRIGGER)
-        
         if command in hard_commands:
             command_used = hard_commands[command]
             response = command_used.help
@@ -157,9 +170,6 @@ class Help(Command):
             help_url = f"{DATABASE}/commands/help/twitch/{command}/"
             api_response = await self.aio_get(help_url)
             response = api_response.get("output", response)
-
-        else:
-            response = f"That's not a command, {user.display_name}."
 
         return response
 
@@ -178,6 +188,8 @@ class EditHelp(Command):
         return f"{self.command_name} edits the {TRIGGER}help entry for simple IO commands."
 
     async def execute(self, user=TwitchUser(), message=""):
+        if len(message.split()) <= 1:
+            return
         url = f"{DATABASE}/commands/get-all/twitch/"
         subclasses = (s() for s in Command.__subclasses__())
         
