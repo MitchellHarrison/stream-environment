@@ -20,6 +20,20 @@ services:
         depends_on:
             - chat_input_handler
 
+    youtube_chatbot:
+        container_name: ${YOUTUBE_BOT}
+        build:
+            context: ./youtube-chatbot
+        networks:
+            stream-net:
+                aliases:
+                    - ${YOUTUBE_BOT}
+        env_file: .env
+        ports:
+            - "${YOUTUBE_BOT_PORT}:${YOUTUBE_BOT_PORT}"
+        depends_on:
+            - chat_input_handler
+
     chat_input_handler:
         container_name: ${CHAT_IN_HANDLER}
         build: 

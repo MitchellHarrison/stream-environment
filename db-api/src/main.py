@@ -161,12 +161,11 @@ async def edit_command_help(platform:str, command:str, payload:Request):
         return FAILURE
 
 
-
 @app.post("/tokens/set/")
 async def set_token(payload:Request):
     data = await payload.json()
-    name = data.get("name", "")
-    token = data.get("token", "")
+    name = data["name"]
+    token = data["token"]
     statement = (Tokens
             .insert(name=name, token=token)
             .on_conflict(

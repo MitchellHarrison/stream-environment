@@ -1,3 +1,4 @@
 *.pyc
 credentials.env
+secrets.json
 venv/
